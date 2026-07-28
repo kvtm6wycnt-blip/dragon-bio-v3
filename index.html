@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>听鼓而动，闻锣而息 — 龙舟赛生物作业交互空间</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#0a1628;color:#e8e8e8;}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,0.05);}
+::-webkit-scrollbar-thumb{background:rgba(212,168,83,0.4);border-radius:3px;}
+
+/* ===== HERO ===== */
+#hero{position:fixed;top:0;left:0;width:100%;height:100vh;z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.8s ease,transform 0.8s ease;}
+#hero.hidden{opacity:0;pointer-events:none;transform:scale(1.05);}
+#hero-bg{position:absolute;top:0;left:0;width:100%;height:100%;background:url('https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/dragon_landscape_bg.jpg') center/cover no-repeat;animation:heroBgZoom 30s ease-in-out infinite alternate;}
+@keyframes heroBgZoom{0%{transform:scale(1);}100%{transform:scale(1.08);}}
+#hero-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(10,22,40,0.72);}
+#hero-particles{position:absolute;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;}
+.particle{position:absolute;width:3px;height:3px;background:rgba(212,168,83,0.5);border-radius:50%;animation:floatUp linear infinite;}
+@keyframes floatUp{0%{transform:translateY(100vh) scale(0);opacity:0;}10%{opacity:1;}90%{opacity:1;}100%{transform:translateY(-10vh) scale(1);opacity:0;}}
+.hero-content{position:relative;z-index:1;max-width:900px;padding:0 24px;}
+.hero-title{font-size:clamp(2.2rem,6vw,4.5rem);font-weight:900;background:linear-gradient(135deg,#f0d078,#d4a853,#c4943e,#f0d078);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-shadow:none;margin-bottom:24px;letter-spacing:0.08em;line-height:1.3;}
+.hero-subtitle{font-size:clamp(0.85rem,1.8vw,1.05rem);color:rgba(255,255,255,0.82);line-height:1.9;text-align:left;background:rgba(0,0,0,0.3);padding:24px 28px;border-radius:12px;border:1px solid rgba(212,168,83,0.2);max-height:38vh;overflow-y:auto;margin-bottom:32px;}
+.hero-subtitle::-webkit-scrollbar{width:4px;}
+.hero-subtitle::-webkit-scrollbar-thumb{background:rgba(212,168,83,0.3);border-radius:2px;}
+.hero-btn{display:inline-block;padding:16px 48px;font-size:1.15rem;font-weight:700;color:#0a1628;background:linear-gradient(135deg,#f0d078,#d4a853);border:none;border-radius:50px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 24px rgba(212,168,83,0.35);animation:btnPulse 2s ease-in-out infinite;}
+.hero-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(212,168,83,0.5);}
+@keyframes btnPulse{0%,100%{box-shadow:0 4px 24px rgba(212,168,83,0.35);}50%{box-shadow:0 4px 36px rgba(212,168,83,0.55);}}
+
+/* ===== NAVBAR ===== */
+#navbar{position:fixed;top:0;left:0;width:100%;height:56px;z-index:150;background:rgba(10,22,40,0.82);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(212,168,83,0.15);display:none;align-items:center;justify-content:center;gap:6px;padding:0 12px;transition:opacity 0.5s;}
+#navbar.show{display:flex;}
+.nav-btn{padding:8px 18px;font-size:0.88rem;font-weight:600;color:rgba(255,255,255,0.6);background:transparent;border:1px solid transparent;border-radius:24px;cursor:pointer;transition:all 0.3s;white-space:nowrap;}
+.nav-btn:hover{color:#f0d078;border-color:rgba(212,168,83,0.3);}
+.nav-btn.active{color:#f0d078;background:rgba(212,168,83,0.12);border-color:rgba(212,168,83,0.4);}
+.nav-btn.completed{color:#6ecf97;}
+.nav-btn.completed::after{content:' ✓';font-size:0.75rem;}
+
+/* ===== SLIDER ===== */
+#slider-wrap{position:fixed;top:0;left:0;width:100%;height:100vh;display:none;z-index:100;}
+#slider-wrap.show{display:block;}
+#slider-container{width:100%;height:100vh;overflow:hidden;}
+#slider-track{display:flex;height:100%;transition:transform 0.6s cubic-bezier(0.4,0,0.2,1);}
+.module-panel{min-width:100vw;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;padding:72px 20px 60px;display:flex;flex-direction:column;align-items:center;}
+
+/* ===== QUESTION CARDS ===== */
+.card{width:100%;max-width:780px;background:rgba(255,255,255,0.04);border-radius:16px;padding:28px 28px 24px;margin-bottom:20px;border:1px solid rgba(255,255,255,0.06);position:relative;overflow:visible;transition:transform 0.2s;flex-shrink:0;}
+.card:hover{transform:translateY(-1px);}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px;}
+.card.m1::before{background:linear-gradient(180deg,#6ecf97,#3da66a);}
+.card.m2::before{background:linear-gradient(180deg,#f0d078,#d4a853);}
+.card.m3::before{background:linear-gradient(180deg,#6ea8cf,#3d7fa6);}
+.card.m4::before{background:linear-gradient(180deg,#cf6e6e,#a63d3d);}
+.module-tag{display:inline-block;padding:3px 12px;font-size:0.75rem;font-weight:600;border-radius:20px;margin-bottom:12px;}
+.m1 .module-tag{background:rgba(110,207,151,0.15);color:#6ecf97;}
+.m2 .module-tag{background:rgba(240,208,120,0.15);color:#f0d078;}
+.m3 .module-tag{background:rgba(110,168,207,0.15);color:#6ea8cf;}
+.m4 .module-tag{background:rgba(207,110,110,0.15);color:#cf6e6e;}
+.card-title{font-size:1.05rem;font-weight:700;color:#f0e6cc;margin-bottom:10px;line-height:1.6;}
+.card-context{font-size:0.9rem;color:rgba(255,255,255,0.7);line-height:1.7;margin-bottom:16px;padding:12px 16px;background:rgba(255,255,255,0.03);border-radius:10px;border-left:3px solid rgba(212,168,83,0.3);}
+.card-question{font-size:0.95rem;color:#fff;line-height:1.8;margin-bottom:16px;font-weight:500;}
+.card-img{display:block;max-height:220px;width:auto;max-width:100%;margin:0 auto 18px;border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,0.3);object-fit:contain;}
+
+/* Options */
+.options{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;}
+.option-btn{display:flex;align-items:center;padding:12px 16px;background:rgba(255,255,255,0.04);border:1.5px solid rgba(255,255,255,0.08);border-radius:10px;cursor:pointer;transition:all 0.25s;font-size:0.9rem;color:rgba(255,255,255,0.85);line-height:1.5;text-align:left;}
+.option-btn:hover{border-color:rgba(212,168,83,0.4);background:rgba(212,168,83,0.06);}
+.option-btn.selected{border-color:#d4a853;background:rgba(212,168,83,0.12);color:#f0d078;font-weight:600;}
+.option-btn .opt-label{display:inline-flex;align-items:center;justify-content:center;min-width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,0.08);font-size:0.8rem;font-weight:700;margin-right:12px;flex-shrink:0;transition:all 0.25s;}
+.option-btn.selected .opt-label{background:#d4a853;color:#0a1628;}
+
+/* Fill-in */
+.fill-group{margin-bottom:14px;}
+.fill-label{font-size:0.9rem;color:rgba(255,255,255,0.8);margin-bottom:6px;line-height:1.7;}
+.fill-input{background:transparent;border:none;border-bottom:2px solid rgba(212,168,83,0.3);color:#f0d078;font-size:0.95rem;padding:4px 8px;width:120px;text-align:center;outline:none;transition:border-color 0.3s;}
+.fill-input:focus{border-bottom-color:#d4a853;}
+.fill-input::placeholder{color:rgba(255,255,255,0.2);font-size:0.8rem;}
+
+/* Judgment */
+.judge-group{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px;}
+.judge-item{display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.03);border-radius:10px;border:1px solid rgba(255,255,255,0.06);}
+.judge-text{font-size:0.85rem;color:rgba(255,255,255,0.8);flex:1;min-width:200px;line-height:1.5;}
+.judge-btns{display:flex;gap:6px;}
+.judge-btn{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,0.15);background:transparent;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.25s;color:rgba(255,255,255,0.5);}
+.judge-btn:hover{border-color:rgba(212,168,83,0.5);}
+.judge-btn.selected-true{border-color:#6ecf97;background:rgba(110,207,151,0.15);color:#6ecf97;}
+.judge-btn.selected-false{border-color:#cf6e6e;background:rgba(207,110,110,0.15);color:#cf6e6e;}
+
+/* Submit button */
+.submit-btn{display:block;width:100%;max-width:780px;padding:14px;font-size:1rem;font-weight:700;color:#0a1628;background:linear-gradient(135deg,#f0d078,#d4a853);border:none;border-radius:12px;cursor:pointer;transition:all 0.3s;box-shadow:0 4px 16px rgba(212,168,83,0.25);margin-top:8px;}
+.submit-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(212,168,83,0.4);}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
+
+/* Analysis Panel */
+.analysis-panel{width:100%;max-width:780px;background:rgba(10,22,40,0.85);backdrop-filter:blur(12px);border-radius:16px;padding:28px;margin:20px auto 0;border:1px solid rgba(212,168,83,0.15);display:none;flex-shrink:0;}
+.analysis-panel.show{display:block;animation:fadeSlideUp 0.5s ease;}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+.analysis-title{font-size:1.1rem;font-weight:700;color:#f0d078;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.analysis-item{margin-bottom:20px;padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;border-left:3px solid;}
+.analysis-item.correct{border-left-color:#6ecf97;}
+.analysis-item.wrong{border-left-color:#cf6e6e;}
+.analysis-result{font-size:0.9rem;font-weight:600;margin-bottom:8px;}
+.analysis-result.correct{color:#6ecf97;}
+.analysis-result.wrong{color:#cf6e6e;}
+.analysis-detail{font-size:0.88rem;color:rgba(255,255,255,0.75);line-height:1.8;}
+.analysis-teacher{font-size:0.88rem;color:rgba(255,255,255,0.8);line-height:1.9;margin-top:16px;padding:16px;background:rgba(212,168,83,0.06);border-radius:10px;border:1px solid rgba(212,168,83,0.15);}
+.analysis-teacher::before{content:'👩\u200d🏫 教师点评';display:block;font-weight:700;color:#f0d078;margin-bottom:8px;}
+
+/* Reinforcement Questions */
+.reinf-section{margin-top:24px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);}
+.reinf-title{font-size:1rem;font-weight:700;color:#6ea8cf;margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+.reinf-card{background:rgba(110,168,207,0.06);border-radius:12px;padding:18px;margin-bottom:12px;border:1px solid rgba(110,168,207,0.12);}
+.reinf-q{font-size:0.9rem;color:rgba(255,255,255,0.9);line-height:1.7;margin-bottom:10px;}
+.reinf-options{display:flex;flex-direction:column;gap:6px;}
+.reinf-opt{padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:0.85rem;color:rgba(255,255,255,0.75);cursor:pointer;border:1px solid transparent;transition:all 0.2s;}
+.reinf-opt:hover{border-color:rgba(110,168,207,0.3);}
+.reinf-opt.selected{border-color:#6ea8cf;background:rgba(110,168,207,0.1);}
+.reinf-opt.correct-reveal{border-color:#6ecf97;background:rgba(110,207,151,0.1);color:#6ecf97;}
+.reinf-opt.wrong-reveal{border-color:#cf6e6e;background:rgba(207,110,110,0.1);color:#cf6e6e;}
+.reinf-answer{font-size:0.82rem;color:rgba(255,255,255,0.6);margin-top:8px;display:none;line-height:1.6;}
+.reinf-answer.show{display:block;}
+.refresh-btn{display:inline-flex;align-items:center;gap:6px;padding:8px 20px;font-size:0.85rem;font-weight:600;color:#6ea8cf;background:rgba(110,168,207,0.1);border:1px solid rgba(110,168,207,0.2);border-radius:20px;cursor:pointer;transition:all 0.3s;margin-top:8px;}
+.refresh-btn:hover{background:rgba(110,168,207,0.18);border-color:rgba(110,168,207,0.4);}
+
+/* Radar Chart */
+.radar-section{width:100%;max-width:780px;margin-top:24px;}
+.radar-container{background:rgba(255,255,255,0.03);border-radius:16px;padding:24px;border:1px solid rgba(255,255,255,0.06);}
+.radar-title{font-size:1rem;font-weight:700;color:#f0d078;margin-bottom:16px;text-align:center;}
+#radarChart{max-width:400px;margin:0 auto;}
+
+/* ===== CHATBOT ===== */
+#chat-toggle{position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#f0d078,#d4a853);border:none;cursor:pointer;font-size:1.5rem;z-index:300;box-shadow:0 4px 20px rgba(212,168,83,0.35);transition:all 0.3s;display:flex;align-items:center;justify-content:center;}
+#chat-toggle:hover{transform:scale(1.08);}
+#chat-panel{position:fixed;bottom:90px;right:24px;width:360px;height:500px;background:rgba(10,22,40,0.95);backdrop-filter:blur(16px);border-radius:16px;border:1px solid rgba(212,168,83,0.2);z-index:290;display:none;flex-direction:column;box-shadow:0 8px 40px rgba(0,0,0,0.5);overflow:hidden;}
+#chat-panel.open{display:flex;animation:fadeSlideUp 0.3s ease;}
+.chat-header{padding:14px 18px;background:rgba(212,168,83,0.1);border-bottom:1px solid rgba(212,168,83,0.15);display:flex;align-items:center;justify-content:space-between;}
+.chat-header-title{font-size:0.95rem;font-weight:700;color:#f0d078;}
+.chat-close{background:none;border:none;color:rgba(255,255,255,0.5);font-size:1.2rem;cursor:pointer;padding:4px;}
+.chat-close:hover{color:#fff;}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
+.chat-msg{max-width:88%;padding:10px 14px;border-radius:12px;font-size:0.85rem;line-height:1.7;animation:fadeSlideUp 0.3s ease;}
+.chat-msg.bot{align-self:flex-start;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.88);border-bottom-left-radius:4px;}
+.chat-msg.user{align-self:flex-end;background:rgba(212,168,83,0.15);color:#f0e6cc;border-bottom-right-radius:4px;}
+.chat-input-area{padding:12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;}
+.chat-input{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:8px 14px;color:#fff;font-size:0.85rem;outline:none;}
+.chat-input:focus{border-color:rgba(212,168,83,0.4);}
+.chat-input::placeholder{color:rgba(255,255,255,0.25);}
+.chat-send{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#f0d078,#d4a853);border:none;cursor:pointer;font-size:1rem;display:flex;align-items:center;justify-content:center;transition:all 0.2s;flex-shrink:0;}
+.chat-send:hover{transform:scale(1.05);}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .hero-title{font-size:2rem;}
+  .hero-subtitle{font-size:0.82rem;padding:16px;max-height:32vh;}
+  .nav-btn{padding:6px 12px;font-size:0.78rem;}
+  .module-panel{padding:64px 12px 30px;}
+  .card{padding:20px 18px 18px;}
+  #chat-panel{width:calc(100vw - 32px);right:16px;bottom:84px;height:420px;}
+  #chat-toggle{bottom:16px;right:16px;width:48px;height:48px;font-size:1.2rem;}
+  .judge-item{flex-direction:column;align-items:flex-start;}
+}
+@media(max-width:480px){
+  .hero-title{font-size:1.7rem;}
+  .nav-btn{padding:5px 9px;font-size:0.72rem;}
+  .card-title{font-size:0.95rem;}
+  .card-question{font-size:0.88rem;}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HERO SECTION ===== -->
+<div id="hero">
+  <div id="hero-bg"></div>
+  <div id="hero-overlay"></div>
+  <div id="hero-particles"></div>
+  <div class="hero-content">
+    <h1 class="hero-title">听鼓而动，闻锣而息</h1>
+    <div class="hero-subtitle">
+      <strong>【设计意图】</strong><br><br>
+      以龙舟赛为真实情境，学生化身"运动生理分析员"，沿<b>赛前指导→赛中监测→赛后分析→应急处置</b>的赛事时间线，完成呼吸系统核心知识的探究学习。<br><br>
+      <b>四层进阶</b>：基础识记→应用分析→评价创造→跨学科融合<br>
+      <b>六大考点</b>：呼吸系统组成、膈肌运动、呼吸运动、模型评价、急救应用、胸围差与肺活量<br>
+      <b>核心素养</b>：生命观念·科学思维·科学探究·社会责任
+    </div>
+    <button class="hero-btn" onclick="enterModules()">开始答题 ↓</button>
+  </div>
+</div>
+
+<!-- ===== NAVBAR ===== -->
+<nav id="navbar">
+  <button class="nav-btn active" onclick="slideTo(0)">一·赛前指导</button>
+  <button class="nav-btn" onclick="slideTo(1)">二·赛中监测</button>
+  <button class="nav-btn" onclick="slideTo(2)">三·赛后分析</button>
+  <button class="nav-btn" onclick="slideTo(3)">四·应急拓展</button>
+  <button class="nav-btn" onclick="slideTo(4)">五·智能分析</button>
+  <button class="nav-btn" onclick="slideTo(5)">六·强化训练</button>
+</nav>
+
+<!-- ===== SLIDER ===== -->
+<div id="slider-wrap">
+  <div id="slider-container">
+    <div id="slider-track">
+      <div class="module-panel" id="panel-0"></div>
+      <div class="module-panel" id="panel-1"></div>
+      <div class="module-panel" id="panel-2"></div>
+      <div class="module-panel" id="panel-3"></div>
+      <div class="module-panel" id="panel-4"></div>
+      <div class="module-panel" id="panel-5"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHATBOT ===== -->
+<button id="chat-toggle" onclick="toggleChat()">🤖</button>
+<div id="chat-panel">
+  <div class="chat-header">
+    <span class="chat-header-title">🧬 生物学习助手</span>
+    <button class="chat-close" onclick="toggleChat()">✕</button>
+  </div>
+  <div class="chat-messages" id="chat-messages"></div>
+  <div class="chat-input-area">
+    <input class="chat-input" id="chat-input" placeholder="问我任何呼吸系统的问题..." onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="chat-send" onclick="sendChat()">➤</button>
+  </div>
+</div>
+
+<script>
+// ===== PARTICLES =====
+(function(){
+  const c=document.getElementById('hero-particles');
+  for(let i=0;i<25;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=Math.random()*10+'s';
+    p.style.width=p.style.height=(2+Math.random()*3)+'px';
+    c.appendChild(p);
+  }
+})();
+
+// ===== STATE =====
+let currentSlide = 0;
+let answers = {};
+let moduleCompleted = [false,false,false,false,false,false];
+const KNOWLEDGE_MAP = {
+  q1:'呼吸系统组成',
+  q2_1:'膈肌运动与胸廓变化',q2_2:'膈肌运动与胸廓变化',q3:'呼吸运动综合应用',
+  q4:'模型比较与评价',
+  q5:'海姆立克急救与呼吸道',q6:'呼吸系统组成',
+  q7_1:'胸围差与肺活量',q7_2:'膈肌运动与胸廓变化',q7_3:'胸围差与肺活量',q7_4:'胸围差与肺活量',q7_5:'胸围差与肺活量',
+  q8_1:'呼吸运动综合应用',q8_2:'呼吸运动综合应用',q8_3:'呼吸运动综合应用',q8_4:'呼吸运动综合应用',q8_5:'呼吸运动综合应用'
+};
+const DIMS = ['呼吸系统组成','膈肌运动与胸廓变化','呼吸运动综合应用','模型比较与评价','海姆立克急救与呼吸道','胸围差与肺活量'];
+const DIM_QUESTIONS = {
+  '呼吸系统组成':['q1','q6'],
+  '膈肌运动与胸廓变化':['q2_1','q2_2','q7_2'],
+  '呼吸运动综合应用':['q3','q8_1','q8_2','q8_3','q8_4','q8_5'],
+  '模型比较与评价':['q4'],
+  '海姆立克急救与呼吸道':['q5'],
+  '胸围差与肺活量':['q7_1','q7_3','q7_4','q7_5']
+};
+
+// ===== TEACHER ANALYSIS TEXT =====
+const TEACHER_ANALYSIS = {
+  '呼吸系统组成':'该同学对呼吸系统的基础结构掌握不够扎实。在初中生物教学中，呼吸系统的结构是所有后续知识的基石。建议重点回顾：①呼吸道的组成顺序（鼻→咽→喉→气管→支气管）；②呼吸道不仅是气体通道，还具有温暖、湿润、清洁空气的功能；③呼吸道有骨或软骨做支架，保证气流通畅——这一结构特点在膈肌模型中由②塑料管和③Y型管体现。建议学生对照课本P42呼吸系统组成图，逐一指认并说出功能。',
+  '膈肌运动与胸廓变化':'膈肌运动与胸廓容积变化的因果关系是本章的核心难点。该同学在此处出现错误，说明对"肌肉舒缩→骨性结构运动→容积变化→气压变化→气体进出"这一逻辑链理解不够清晰。关键要区分：吸气时膈肌收缩（不是舒张！），膈顶下降（不是上升！），胸廓上下径增大。建议学生用手按压腹部模拟膈肌运动：手向下推=膈肌收缩=吸气；手放松回弹=膈肌舒张=呼气。反复体验3-5次即可建立正确表象。',
+  '呼吸运动综合应用':'该同学能将呼吸运动原理应用于478呼吸法等具体情境，但对呼气过程中胸腔与肺的关系判断仍有混淆。需要强调：无论是平静呼气还是用力呼气，本质都是胸腔容积缩小→肺回缩→肺内气压升高→气体排出。肺本身不能主动扩大或缩小，它总是被动地随胸腔容积变化而变化。建议结合"注射器模型"类比理解。',
+  '模型比较与评价':'该同学在模型比较中未能抓住"评价模型优劣"的核心标准——能否完整模拟目标生理过程。模型乙优于模型甲的关键不在于"更复杂"或"更美观"，而在于它能同时模拟膈肌和肋间肌的协同运动，这对于理解龙舟半跪姿势下的呼吸限制至关重要。建议引导学生建立模型评价的思维框架：①模型模拟了什么结构？②能否展示目标过程？③有无遗漏的关键变量？',
+  '海姆立克急救与呼吸道':'该同学对呼吸道阻塞的生理影响理解基本到位，但在"首先影响哪个环节"上存在混淆。关键是建立气体交换的层级思维：外界↔肺（肺通气）→ 肺↔血液（肺泡气体交换）→ 血液↔组织细胞（组织气体交换）。异物阻塞气管，首先阻碍的是第一层级——肺通气。海姆立克急救法的原理是：挤压上腹部→膈顶上升→胸腔缩小→肺内气体急速排出→冲出异物，这是一个人为制造的"用力呼气"过程。',
+  '胸围差与肺活量':'该同学对胸围差概念理解较好，但在定量分析和实际应用（如半跪姿势对胸围差的影响）上仍需加强。胸围差=最大吸气胸围-最大呼气胸围，反映的是肋间肌和膈肌的协同收缩力量。半跪姿势下腹部受压→膈肌下降受限→胸廓上下径变化幅度减小→胸围差减小→肺活量下降。建议学生自测胸围差：软尺绕胸部，分别记录尽力吸气和尽力呼气时的胸围，计算差值。'
+};
+
+// ===== QUESTION BANK =====
+const QBANK = {
+  '呼吸系统组成': [
+    {type:'mc',q:'游泳运动员在比赛前做热身时，深吸气能使更多气体进入肺部。下列结构中，能使气体进入肺的"动力"来源于（ ）',opts:['A.肺的弹性回缩','B.呼吸肌的收缩和舒张','C.气体的扩散作用','D.气管的支撑作用'],ans:1,exp:'呼吸运动是由呼吸肌（肋间肌和膈肌）的收缩和舒张引起的，这是肺通气的动力来源。'},
+    {type:'mc',q:'感冒时鼻塞会影响呼吸。从呼吸系统的结构分析，鼻塞主要影响的是（ ）',opts:['A.鼻对空气的加温湿润','B.气体进入肺的通道通畅性','C.肺泡的气体交换效率','D.膈肌的收缩能力'],ans:1,exp:'鼻塞导致鼻腔通道变窄，直接影响气体进出肺的通道通畅性。'},
+    {type:'mc',q:'人在吞咽食物时，会厌软骨会盖住喉口，防止食物进入气管。如果吃饭时大声说笑，食物可能误入气管引起剧烈咳嗽。这一现象说明（ ）',opts:['A.咽是食物和气体的共同通道','B.喉只是发声器官','C.气管有软骨支撑','D.肺能自动排出异物'],ans:0,exp:'咽是消化道和呼吸道的共同通道，食物和气体都要经过咽。会厌软骨的作用就是在吞咽时盖住喉口。'},
+    {type:'mc',q:'长跑比赛中，运动员用口鼻同时呼吸。与仅用鼻呼吸相比，口鼻同时呼吸的主要优势是（ ）',opts:['A.能更好地过滤空气中的灰尘','B.能增大气体进出的通量，满足高强度运动需求','C.能使空气更温暖湿润','D.能增强肺泡的气体交换能力'],ans:1,exp:'口鼻同时呼吸可以增大通气量，满足高强度运动时对氧气的更大需求。'},
+    {type:'mc',q:'痰的形成部位是（ ）',opts:['A.鼻腔','B.咽','C.喉','D.气管和支气管'],ans:3,exp:'痰是在气管和支气管中形成的。气管和支气管内壁的黏膜分泌黏液粘住灰尘和细菌，纤毛向咽喉方向摆动将黏液送到咽部形成痰。'}
+  ],
+  '膈肌运动与胸廓变化': [
+    {type:'mc',q:'潜水员在水下憋气时，膈肌处于什么状态？（ ）',opts:['A.持续收缩','B.持续舒张','C.先收缩后舒张','D.保持收缩状态，膈顶维持下降位置'],ans:3,exp:'潜水员吸气后憋气，膈肌保持收缩状态，膈顶维持在下降位置，此时声门关闭，气体暂时无法进出。'},
+    {type:'mc',q:'打喷嚏时，气体以极快速度从鼻腔和口腔喷出。从呼吸运动角度分析，打喷嚏时（ ）',opts:['A.膈肌和肋间肌同时舒张，胸廓急剧缩小','B.膈肌收缩，肋间肌舒张','C.膈肌舒张，肋间肌收缩','D.只有膈肌在运动'],ans:0,exp:'打喷嚏是一次强烈的呼气过程，膈肌和肋间肌都急剧舒张→胸廓容积急剧缩小→肺急剧回缩→气体高速喷出。'},
+    {type:'mc',q:'瑜伽中的"腹式呼吸"强调吸气时腹部鼓起。从膈肌运动角度分析，吸气时腹部鼓起是因为（ ）',opts:['A.腹部肌肉收缩','B.膈肌收缩、膈顶下降压迫腹腔脏器','C.肋骨向外扩展','D.肺体积增大挤压腹部'],ans:1,exp:'腹式呼吸吸气时，膈肌强烈收缩→膈顶大幅度下降→压迫腹腔脏器→腹部向外鼓起。'},
+    {type:'mc',q:'某同学做肺活量测试时，尽力吸气后再尽力呼气。在尽力吸气阶段，膈肌和肋间肌的状态分别是（ ）',opts:['A.膈肌舒张，肋间肌收缩','B.膈肌收缩，肋间肌舒张','C.两者都收缩','D.两者都舒张'],ans:2,exp:'尽力吸气时，肋间肌和膈肌都强烈收缩，使胸廓容积尽可能增大。'},
+    {type:'mc',q:'婴儿出生后的第一声啼哭标志着自主呼吸的开始。啼哭时（ ）',opts:['A.膈肌舒张，胸腔缩小，肺内气体排出','B.膈肌收缩，胸腔扩大，外界气体进入','C.膈肌先舒张后收缩','D.只有胸廓在运动'],ans:0,exp:'婴儿啼哭是第一次呼气，膈肌舒张→膈顶上升→胸腔缩小→肺回缩→气体排出，经过声带产生哭声。'}
+  ],
+  '呼吸运动综合应用': [
+    {type:'mc',q:'吹奏笛子时，艺人需要控制呼气的速度和均匀度。在此过程中（ ）',opts:['A.肋间肌和膈肌持续收缩','B.肋间肌和膈肌缓慢舒张，使胸廓逐渐缩小，气体均匀呼出','C.肋间肌快速收缩，膈肌舒张','D.胸廓容积保持不变'],ans:1,exp:'吹奏乐器需要均匀持续的气流，要求肋间肌和膈肌缓慢舒张，使胸廓逐渐缩小，气体均匀呼出。'},
+    {type:'mc',q:'高原训练中，运动员在海拔2000米处训练。与平原相比，高原上空气稀薄，氧分压低。为了获得足够的氧气，运动员的呼吸会（ ）',opts:['A.变浅变慢','B.加深加快','C.变浅加快','D.加深变慢'],ans:1,exp:'高原氧气稀薄，需要通过加深加快呼吸来增加通气量，以补偿氧气不足。'},
+    {type:'mc',q:'"打嗝"是膈肌不自主地痉挛收缩引起的。打嗝时（ ）',opts:['A.气体被快速吸入','B.气体被快速排出','C.膈肌舒张','D.胸廓缩小'],ans:0,exp:'膈肌突然痉挛性收缩→胸廓容积突然增大→肺急速扩张→外界气体快速冲入→发出"嗝"声。'},
+    {type:'mc',q:'人工呼吸的原理是（ ）',opts:['A.利用呼吸肌的收缩','B.利用肺的弹性','C.人为制造肺内气压与外界气压的差值，使气体被动进出','D.利用心脏的搏动'],ans:2,exp:'人工呼吸的原理是人为制造气压差，使气体被动进出肺。'},
+    {type:'mc',q:'人在寒冷环境中会不自主地"打寒战"，同时呼吸也会加深。呼吸加深的原因是（ ）',opts:['A.寒冷刺激使呼吸肌更有力','B.机体产热增加，代谢加快，需氧量增大','C.冷空气使肺扩张更困难','D.鼻腔对冷空气的抵抗力增强'],ans:1,exp:'寒冷时身体通过颤抖产热，代谢速率加快，组织细胞耗氧量增加，需要更多氧气。'}
+  ],
+  '模型比较与评价': [
+    {type:'mc',q:'某同学用气球和矿泉水瓶制作了呼吸模型，但发现只能演示膈肌运动。要改进该模型使其也能演示肋间肌运动，最合理的做法是（ ）',opts:['A.增加一个气球','B.用弹力带连接瓶壁和吸管，模拟肋间外肌','C.换更大的瓶子','D.在瓶底多开一个孔'],ans:1,exp:'用弹力带连接瓶壁和吸管可以模拟肋间外肌的收缩舒张，从而使模型也能演示肋间肌运动。'},
+    {type:'mc',q:'在评价"呼吸运动模型"时，下列哪项不是科学的评价标准？（ ）',opts:['A.能否模拟膈肌运动','B.能否同时模拟肋间肌运动','C.模型的外观是否美观','D.能否反映胸廓容积变化与呼吸的关系'],ans:2,exp:'模型评价应关注功能性指标，外观美观不是科学的评价标准。'},
+    {type:'mc',q:'某呼吸模型中，向下拉橡皮膜时气球膨胀。若将该模型倾斜45°后再下拉橡皮膜，气球膨胀幅度变小。这一现象可类比解释（ ）',opts:['A.运动时呼吸加深','B.半跪姿势对膈肌运动的限制','C.呼吸道对气流的阻碍','D.肺泡的弹性回缩'],ans:1,exp:'模型倾斜类比半跪姿势下腹部对膈肌运动的限制，导致膈肌下降幅度减小。'},
+    {type:'mc',q:'下列关于生物模型的说法，错误的是（ ）',opts:['A.模型可以帮助人们理解抽象的生理过程','B.模型的局限性在于无法完全还原真实的生理结构','C.越复杂的模型越好，简单模型没有价值','D.选择模型时应关注它能否模拟目标生理过程的关键结构'],ans:2,exp:'模型的优劣不在于复杂程度，而在于能否有效模拟目标生理过程的关键结构和功能。'},
+    {type:'mc',q:'某同学发现模型乙中的弹力带断裂后，模型无法正常演示肋间肌运动。这说明（ ）',opts:['A.模型乙的设计有缺陷','B.肋间外肌在呼吸运动中不可或缺','C.应该换回模型甲','D.弹力带的材料不适当'],ans:1,exp:'弹力带模拟肋间外肌，断裂后无法演示说明肋间外肌在呼吸运动中不可或缺。'}
+  ],
+  '海姆立克急救与呼吸道': [
+    {type:'mc',q:'异物阻塞气管后，患者面色发紫。从气体交换角度分析，"发紫"的根本原因是（ ）',opts:['A.二氧化碳在血液中积累','B.血液中氧气含量下降，血红蛋白呈现暗红色','C.肺部充血','D.心脏供血不足'],ans:1,exp:'缺氧导致血液中还原血红蛋白增多，呈现暗红色/发紫。'},
+    {type:'mc',q:'对2岁以下婴儿实施海姆立克急救法时，应采用拍背法而非腹部冲击法。这是因为（ ）',opts:['A.婴儿的膈肌尚未发育完全','B.婴儿腹部器官柔软，冲击可能造成内脏损伤','C.婴儿的气管更粗','D.婴儿不会配合急救'],ans:1,exp:'婴儿腹部器官柔软，腹部冲击可能造成内脏损伤，因此采用拍背法更安全。'},
+    {type:'mc',q:'溺水者被救上岸后，首先应（ ）',opts:['A.立即进行人工呼吸','B.清除口鼻异物，保持呼吸道通畅','C.做胸外按压','D.拨打120后等待救援'],ans:1,exp:'急救的第一步始终是清除口鼻异物、保持呼吸道通畅，这是所有急救操作的前提。'},
+    {type:'mc',q:'异物完全阻塞气管后，患者无法说话、无法咳嗽。从呼吸全过程分析，最先受到影响的环节是（ ）',opts:['A.肺泡内的气体交换','B.肺与外界的气体交换','C.气体在血液中的运输','D.组织里的气体交换'],ans:1,exp:'气管是气体进出肺的通道，阻塞后首先影响肺与外界的气体交换（肺通气）。'},
+    {type:'mc',q:'某人在进食时突然剧烈咳嗽，面色通红。此时最恰当的初步判断是（ ）',opts:['A.一定是食物中毒','B.可能是异物部分阻塞气管，机体通过咳嗽反射尝试排出','C.一定是过敏反应','D.气管发生了痉挛'],ans:1,exp:'进食时剧烈咳嗽最可能是异物部分阻塞气管，咳嗽是机体试图排出异物的保护性反射。'}
+  ],
+  '胸围差与肺活量': [
+    {type:'mc',q:'游泳运动员的胸围差普遍大于普通人，主要原因是（ ）',opts:['A.游泳时水压压迫胸廓','B.长期游泳训练使肋间肌和膈肌更发达','C.游泳时水温刺激','D.游泳运动员天生胸廓更大'],ans:1,exp:'长期有氧运动训练使呼吸肌（肋间肌和膈肌）更加发达，收缩力量更强，胸围差更大。'},
+    {type:'fill',q:'某同学测得吸气时胸围92cm、呼气时胸围84cm，他的胸围差是____cm。若经过训练后吸气胸围增至94cm、呼气胸围降至82cm，训练后胸围差为____cm。',ans:['8','12'],exp:'胸围差=吸气胸围-呼气胸围。训练前：92-84=8cm；训练后：94-82=12cm。'},
+    {type:'mc',q:'老年人胸围差普遍小于青年人，主要原因是（ ）',opts:['A.老年人肺泡数量减少','B.老年人呼吸肌力量下降、胸廓弹性降低','C.老年人肺活量天生较小','D.老年人肋骨变短'],ans:1,exp:'老年人呼吸肌力量下降、胸廓弹性降低，导致胸廓容积变化幅度减小，胸围差变小。'},
+    {type:'mc',q:'下列运动中，对增大胸围差最有效的是（ ）',opts:['A.举重','B.短跑','C.游泳和慢跑等有氧运动','D.乒乓球'],ans:2,exp:'游泳和慢跑等有氧运动需要持续深呼吸，能有效锻炼肋间肌和膈肌，增大胸围差。'},
+    {type:'fill',q:'胸围差大的人肺活量也较大，其原因是：胸围差大意味着呼吸肌收缩力量强，胸廓容积变化幅度____，因此每次呼吸气体进出量____。',ans:['大','多'],exp:'胸围差大→胸廓容积变化幅度大→每次呼吸进出气体量多→肺活量大。'}
+  ]
+};
+
+// ===== RENDER MODULES =====
+function renderModules(){
+  // Module 1
+  let m1='';
+  m1+=`<div class="card m1">
+    <span class="module-tag">模块一 · 赛前指导 · 基础层 ★☆☆</span>
+    <div class="card-title">运动员肺功能评估表</div>
+    <div class="card-context">赛前指导中，教练用膈肌运动模型为队员讲解呼吸原理。<br>模型结构：①玻璃罩、②塑料管、③Y型塑料管、④气球、⑤橡皮膜。</div>
+    <img class="card-img" src="https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/diaphragm_model.png" alt="膈肌运动模型" onerror="this.style.display='none'">
+    <div class="card-question">题1：下列关于模型结构及其模拟的生理状态，说法正确的是（ ）</div>
+    <div class="options" id="opts-q1">
+      <div class="option-btn" onclick="selectOpt('q1',0,this)"><span class="opt-label">A</span>②模拟气管，③模拟支气管，其中都有骨或软骨作为支架</div>
+      <div class="option-btn" onclick="selectOpt('q1',1,this)"><span class="opt-label">B</span>①模拟肺，乙图表示呼气，④扩大</div>
+      <div class="option-btn" onclick="selectOpt('q1',2,this)"><span class="opt-label">C</span>⑤模拟胸廓，甲图表示吸气，④缩小</div>
+      <div class="option-btn" onclick="selectOpt('q1',3,this)"><span class="opt-label">D</span>④模拟膈肌，乙图表示呼气，④缩小</div>
+    </div>
+  </div>`;
+  m1+=`<button class="submit-btn" onclick="submitModule(0)">提交并进入下一模块 →</button>`;
+  document.getElementById('panel-0').innerHTML=m1;
+
+  // Module 2
+  let m2='';
+  m2+=`<div class="card m2">
+    <span class="module-tag">模块二 · 赛中监测 · 进阶层 ★★☆</span>
+    <div class="card-title">呼吸节奏监测报告</div>
+    <img class="card-img" src="https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/half_kneeling_posture.png" alt="双排半跪式划行姿态" onerror="this.style.display='none'">
+    <div class="card-question">题2(1) 冲刺阶段，运动员深吸气时，膈肌和胸廓的变化是（ ）</div>
+    <div class="options" id="opts-q2_1">
+      <div class="option-btn" onclick="selectOpt('q2_1',0,this)"><span class="opt-label">A</span>膈肌舒张，膈顶上升，胸廓缩小</div>
+      <div class="option-btn" onclick="selectOpt('q2_1',1,this)"><span class="opt-label">B</span>膈肌收缩，膈顶下降，胸廓增大但受半跪限制</div>
+      <div class="option-btn" onclick="selectOpt('q2_1',2,this)"><span class="opt-label">C</span>膈肌收缩，膈顶上升，胸廓增大</div>
+      <div class="option-btn" onclick="selectOpt('q2_1',3,this)"><span class="opt-label">D</span>膈肌舒张，膈顶下降，胸廓缩小</div>
+    </div>
+  </div>`;
+  m2+=`<div class="card m2">
+    <div class="card-question">题2(2) 长时间半跪划行后感觉吸气费力，最合理的解释和应对措施是（ ）</div>
+    <div class="options" id="opts-q2_2">
+      <div class="option-btn" onclick="selectOpt('q2_2',0,this)"><span class="opt-label">A</span>腹部受压，膈顶上升，胸廓上下径变小；应站立做深长腹式呼吸</div>
+      <div class="option-btn" onclick="selectOpt('q2_2',1,this)"><span class="opt-label">B</span>肋骨无法活动；应做高抬腿运动</div>
+      <div class="option-btn" onclick="selectOpt('q2_2',2,this)"><span class="opt-label">C</span>肺内气体无法排出；应憋气休息</div>
+      <div class="option-btn" onclick="selectOpt('q2_2',3,this)"><span class="opt-label">D</span>气管被压扁；应做俯卧撑</div>
+    </div>
+  </div>`;
+  m2+=`<div class="card m2">
+    <div class="card-context">教练指导队员使用"478呼吸法"调整节奏：①用鼻吸气4秒 → ②屏息7秒 → ③用口呼气8秒，循环进行。</div>
+    <div class="card-question">题3：关于478呼吸法中各步骤的生理变化，正确的是（ ）</div>
+    <div class="options" id="opts-q3">
+      <div class="option-btn" onclick="selectOpt('q3',0,this)"><span class="opt-label">A</span>步骤一：胸腔缩小</div>
+      <div class="option-btn" onclick="selectOpt('q3',1,this)"><span class="opt-label">B</span>步骤二：呼吸肌保持收缩，膈顶下降，气体无法进出</div>
+      <div class="option-btn" onclick="selectOpt('q3',2,this)"><span class="opt-label">C</span>步骤三：胸腔缩小→肺扩大</div>
+      <div class="option-btn" onclick="selectOpt('q3',3,this)"><span class="opt-label">D</span>步骤三：气体经肺→支气管→气管→咽→喉→鼻</div>
+    </div>
+  </div>`;
+  m2+=`<button class="submit-btn" onclick="submitModule(1)">提交并进入下一模块 →</button>`;
+  document.getElementById('panel-1').innerHTML=m2;
+
+  // Module 3
+  let m3='';
+  m3+=`<div class="card m3">
+    <span class="module-tag">模块三 · 赛后分析 · 挑战层 ★★★</span>
+    <div class="card-title">呼吸训练模型选型建议</div>
+    <div class="card-context">赛后总结中，教练组讨论选用哪种呼吸模型进行日常训练指导。<br>模型甲：只能演示膈肌运动。<br>模型乙：增加了塑料瓶模拟胸廓、铁丝模拟肋骨、弹力带模拟肋间外肌，能同时演示膈肌和肋间肌的协同运动。</div>
+    <img class="card-img" src="https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/model_comparison.png" alt="模型对比图" onerror="this.style.display='none'">
+    <div class="card-question">题4：模型乙比模型甲更适合用于龙舟队日常训练指导的原因是（ ）</div>
+    <div class="options" id="opts-q4">
+      <div class="option-btn" onclick="selectOpt('q4',0,this)"><span class="opt-label">A</span>能模拟膈肌和肋间肌协同运动</div>
+      <div class="option-btn" onclick="selectOpt('q4',1,this)"><span class="opt-label">B</span>更美观提高兴趣</div>
+      <div class="option-btn" onclick="selectOpt('q4',2,this)"><span class="opt-label">C</span>能模拟前后径但不能模拟上下径</div>
+      <div class="option-btn" onclick="selectOpt('q4',3,this)"><span class="opt-label">D</span>能模拟肋间肌但不能模拟膈肌</div>
+    </div>
+  </div>`;
+  m3+=`<button class="submit-btn" onclick="submitModule(2)">提交并进入下一模块 →</button>`;
+  document.getElementById('panel-2').innerHTML=m3;
+
+  // Module 4
+  let m4='';
+  m4+=`<div class="card m4">
+    <span class="module-tag">模块四 · 应急与拓展 · 综合层 ★★★★</span>
+    <div class="card-title">赛场情况处置与分析报告</div>
+    <img class="card-img" src="https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/heimlich_maneuver.png" alt="海姆立克急救法" onerror="this.style.display='none'">
+    <div class="card-question">题5（必做）：比赛中若有观众因进食异物阻塞呼吸道，下列关于急救的说法正确的是（ ）</div>
+    <div class="options" id="opts-q5">
+      <div class="option-btn" onclick="selectOpt('q5',0,this)"><span class="opt-label">A</span>首先影响肺与外界的气体交换（肺通气），最终导致组织细胞缺氧</div>
+      <div class="option-btn" onclick="selectOpt('q5',1,this)"><span class="opt-label">B</span>挤压腹部使膈顶上升，这属于吸气过程</div>
+      <div class="option-btn" onclick="selectOpt('q5',2,this)"><span class="opt-label">C</span>首先影响肺泡内的气体交换</div>
+      <div class="option-btn" onclick="selectOpt('q5',3,this)"><span class="opt-label">D</span>氧气能提供水分和无机盐</div>
+    </div>
+  </div>`;
+  m4+=`<div class="card m4">
+    <div class="card-question">题6（选做）：某运动员赛前被诊断患有支气管炎，出现呼吸乏力症状。从呼吸系统结构分析，呼吸乏力的主要原因是（ ）</div>
+    <div class="options" id="opts-q6">
+      <div class="option-btn" onclick="selectOpt('q6',0,this)"><span class="opt-label">A</span>呼吸肌疲劳</div>
+      <div class="option-btn" onclick="selectOpt('q6',1,this)"><span class="opt-label">B</span>黏膜水肿、分泌物增多、管腔变窄，气流阻力增大</div>
+      <div class="option-btn" onclick="selectOpt('q6',2,this)"><span class="opt-label">C</span>肺活量不足</div>
+      <div class="option-btn" onclick="selectOpt('q6',3,this)"><span class="opt-label">D</span>膈肌麻痹</div>
+    </div>
+  </div>`;
+  m4+=`<div class="card m4">
+    <div class="card-title">题7（选做·体能拓展）</div>
+    <div class="fill-group">
+      <div class="fill-label">(1) 胸围差越大，说明 <input class="fill-input" id="f-q7_1a" placeholder="？"> 肌和 <input class="fill-input" id="f-q7_1b" placeholder="？"> 肌力量越强</div>
+    </div>
+    <div class="fill-group">
+      <div class="fill-label">(2) 下拉橡皮膜模拟 <input class="fill-input" id="f-q7_2a" placeholder="？"> 肌收缩，气球膨胀表示 <input class="fill-input" id="f-q7_2b" placeholder="？"></div>
+    </div>
+    <div class="fill-group">
+      <div class="fill-label">(3) 经训练后胸围差增大，肺活量更 <input class="fill-input" id="f-q7_3" placeholder="？"></div>
+    </div>
+    <div class="fill-group">
+      <div class="fill-label">(4) 半跪姿势下，胸围差可能会 <input class="fill-input" id="f-q7_4a" placeholder="？">，限制 <input class="fill-input" id="f-q7_4b" placeholder="？"> 肌</div>
+    </div>
+    <div class="fill-group">
+      <div class="fill-label">(5) 增大胸围差的有效建议是（ ）</div>
+      <div class="options" id="opts-q7_5">
+        <div class="option-btn" onclick="selectOpt('q7_5',0,this)"><span class="opt-label">A</span>多喝骨头汤补钙</div>
+        <div class="option-btn" onclick="selectOpt('q7_5',1,this)"><span class="opt-label">B</span>坚持深呼吸训练，加强肋间肌和膈肌</div>
+        <div class="option-btn" onclick="selectOpt('q7_5',2,this)"><span class="opt-label">C</span>减少训练量以保护肺部</div>
+        <div class="option-btn" onclick="selectOpt('q7_5',3,this)"><span class="opt-label">D</span>多做拉伸使骨骼变长</div>
+      </div>
+    </div>
+  </div>`;
+  m4+=`<div class="card m4">
+    <div class="card-title">题8（选做·非遗文化）</div>
+    <div class="card-context">漳州布袋木偶戏是国家级非物质文化遗产。木偶艺人在表演时需要控制气息，配合念白和唱腔。请结合呼吸系统知识判断以下说法的正误：</div>
+    <img class="card-img" src="https://cdn.jsdelivr.net/gh/kvtm6wycnt-blip/dragon-bio-homework@main/images/puppet_show.png" alt="布袋木偶戏" onerror="this.style.display='none'">
+    <div class="judge-group">
+      <div class="judge-item">
+        <span class="judge-text">(1) 深吸气时，肋间肌和膈肌同时收缩</span>
+        <div class="judge-btns">
+          <button class="judge-btn" onclick="selectJudge('q8_1',true,this)">√</button>
+          <button class="judge-btn" onclick="selectJudge('q8_1',false,this)">×</button>
+        </div>
+      </div>
+      <div class="judge-item">
+        <span class="judge-text">(2) 念白时呼气，膈肌上拱，胸廓上下径变小</span>
+        <div class="judge-btns">
+          <button class="judge-btn" onclick="selectJudge('q8_2',true,this)">√</button>
+          <button class="judge-btn" onclick="selectJudge('q8_2',false,this)">×</button>
+        </div>
+      </div>
+      <div class="judge-item">
+        <span class="judge-text">(3) 胸廓的变化是由呼吸运动引起的</span>
+        <div class="judge-btns">
+          <button class="judge-btn" onclick="selectJudge('q8_3',true,this)">√</button>
+          <button class="judge-btn" onclick="selectJudge('q8_3',false,this)">×</button>
+        </div>
+      </div>
+      <div class="judge-item">
+        <span class="judge-text">(4) 呼吸急促是因为呼吸肌快速舒缩、频率加快</span>
+        <div class="judge-btns">
+          <button class="judge-btn" onclick="selectJudge('q8_4',true,this)">√</button>
+          <button class="judge-btn" onclick="selectJudge('q8_4',false,this)">×</button>
+        </div>
+      </div>
+      <div class="judge-item">
+        <span class="judge-text">(5) 气息悠长需要肋间肌和膈肌缓慢舒张</span>
+        <div class="judge-btns">
+          <button class="judge-btn" onclick="selectJudge('q8_5',true,this)">√</button>
+          <button class="judge-btn" onclick="selectJudge('q8_5',false,this)">×</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  m4+=`<button class="submit-btn" onclick="submitModule(3)">提交并进入分析 →</button>`;
+  document.getElementById('panel-3').innerHTML=m4;
+
+  // Module 5: Analysis
+  let m5='';
+  m5+=`<div class="card" style="border-left:4px solid rgba(110,168,207,0.6);">
+    <span class="module-tag" style="background:rgba(110,168,207,0.15);color:#6ea8cf;">模块五 · 智能分析</span>
+    <div class="card-title">📊 完整作业分析报告</div>
+    <div class="card-context">完成所有模块后，系统将自动生成你的学习分析报告，包括每题批改、薄弱点诊断和知识掌握度雷达图。</div>
+  </div>`;
+  m5+=`<div class="analysis-panel" id="analysis-panel" style="display:none;"></div>`;
+  m5+=`<div class="radar-section" id="radar-section" style="display:none;">
+    <div class="radar-container">
+      <div class="radar-title">📊 知识点掌握度雷达图</div>
+      <canvas id="radarChart"></canvas>
+    </div>
+  </div>`;
+  m5+=`<button class="submit-btn" id="goto-training-btn" style="display:none;margin-top:20px;" onclick="slideTo(5)">进入强化训练 →</button>`;
+  document.getElementById('panel-4').innerHTML=m5;
+
+  // Module 6: Reinforcement Training
+  let m6='';
+  m6+=`<div class="card" style="border-left:4px solid rgba(207,110,110,0.6);">
+    <span class="module-tag" style="background:rgba(207,110,110,0.15);color:#cf6e6e;">模块六 · 强化训练</span>
+    <div class="card-title">💪 针对性强化练习</div>
+    <div class="card-context">根据你的薄弱环节，系统为你生成了针对性强化练习题。完成后可以点击"换一批新题"获取更多练习。</div>
+  </div>`;
+  m6+=`<div class="reinf-section" id="reinf-panel" style="display:none;"></div>`;
+  m6+=`<div id="no-weakness-tip" style="display:none;text-align:center;padding:40px 20px;color:rgba(255,255,255,0.6);font-size:1rem;">
+    🎉 太棒了！你没有薄弱环节，所有知识点都掌握得很好！
+  </div>`;
+  document.getElementById('panel-5').innerHTML=m6;
+}
+
+// ===== CORRECT ANSWERS =====
+const CORRECT = {
+  q1:0, q2_1:1, q2_2:0, q3:1, q4:0, q5:0, q6:1, q7_5:1,
+  q8_1:true, q8_2:true, q8_3:false, q8_4:true, q8_5:true
+};
+const ANSWER_EXP = {
+  q1:'②③模拟气管支气管，④气球模拟肺，⑤橡皮膜模拟膈肌，①玻璃罩模拟胸廓。呼吸道有骨或软骨做支架。甲图膈肌舒张膈顶上升=呼气；乙图膈肌收缩膈顶下降=吸气。',
+  q2_1:'深吸气时，膈肌收缩→膈顶下降→胸廓上下径增大。但半跪姿势下腹部受压，膈肌下降幅度受限。',
+  q2_2:'半跪姿势下腹部受压→膈顶上升→胸廓上下径变化幅度减小→吸气费力。站立后腹部压力解除，可做深长腹式呼吸恢复。',
+  q3:'步骤二屏息时，呼吸肌保持收缩状态，膈顶维持在下降位置，胸廓保持扩大状态，此时气体暂时无法进出肺。',
+  q4:'模型乙增加了弹力带模拟肋间外肌，能同时展示膈肌和肋间肌的协同运动，这对于理解龙舟半跪姿势下的呼吸限制至关重要。',
+  q5:'异物阻塞气管→首先影响肺与外界的气体交换（肺通气）→进而影响肺泡气体交换→血液携氧减少→最终导致组织细胞缺氧。',
+  q6:'支气管炎→黏膜水肿、分泌物增多→管腔变窄→气流阻力增大→通气不畅→呼吸乏力。',
+  q7_1:'肋间肌和膈肌是主要的呼吸肌，力量越强，胸廓容积变化越大，胸围差越大。',
+  q7_2:'下拉橡皮膜=膈肌收缩→胸廓容积增大→肺扩张→外界气体进入=吸气。',
+  q7_3:'胸围差增大→每次呼吸进出气体量增多→肺活量更大。',
+  q7_4:'半跪姿势→腹部受压→膈肌下降受限→胸围差减小→限制膈肌运动。',
+  q7_5:'深呼吸训练能有效加强肋间肌和膈肌的力量，从而增大胸围差。',
+  q8_1:'深吸气时肋间肌和膈肌同时收缩，使胸廓容积增大。✓',
+  q8_2:'呼气时膈肌舒张→膈顶上拱→胸廓上下径变小。✓',
+  q8_3:'胸廓变化的原因是呼吸肌的收缩和舒张，不是"呼吸运动"——呼吸运动本身就是胸廓的变化过程，说"胸廓变化由呼吸运动引起"是因果倒置。×',
+  q8_4:'呼吸急促时呼吸肌快速舒缩，频率加快，每次呼吸深度变浅。✓',
+  q8_5:'气息悠长需要控制呼气过程，肋间肌和膈肌缓慢舒张，使气体均匀缓慢呼出。✓'
+};
+
+// ===== EXPLANATION TEXTS FOR EACH QUESTION =====
+const QUESTION_EXPLANATIONS = {
+  q1:{context:'膈肌运动模型',correct:'回答正确！你准确识别了模型中各结构对应的生理部件。呼吸道确实有骨或软骨做支架，保证气流通畅。',wrong:'模型中①玻璃罩=胸廓，②塑料管=气管，③Y型管=支气管，④气球=肺，⑤橡皮膜=膈肌。甲图橡皮膜向上拱=膈肌舒张=呼气；乙图橡皮膜向下拉=膈肌收缩=吸气。'},
+  q2_1:{context:'半跪吸气',correct:'正确！深吸气时膈肌收缩、膈顶下降、胸廓增大，但你注意到了半跪姿势的限制。',wrong:'吸气时膈肌收缩（不是舒张！）→膈顶下降（不是上升！）→胸廓增大。半跪姿势限制了膈肌下降幅度。'},
+  q2_2:{context:'半跪限制',correct:'分析准确！半跪姿势的核心问题在于腹部受压导致膈肌活动受限。',wrong:'半跪→腹部受压→膈顶被向上推→胸廓上下径变化减小→吸气费力。正确应对是站立后做深长腹式呼吸。'},
+  q3:{context:'478呼吸法',correct:'完全正确！屏息阶段呼吸肌保持收缩，膈顶维持下降，胸廓保持扩大。',wrong:'步骤一吸气→胸腔扩大（非缩小）。步骤二屏息→呼吸肌保持收缩，膈顶下降，气体不进出。步骤三呼气→胸腔缩小→肺回缩。气体路径：肺→支气管→气管→喉→咽→鼻（非咽→喉）。'},
+  q4:{context:'模型比较',correct:'正确！模型乙的核心优势在于能模拟膈肌和肋间肌的协同运动。',wrong:'模型乙增加弹力带模拟肋间外肌→能同时演示膈肌和肋间肌协同运动→这对理解半跪姿势呼吸限制至关重要。评价标准是功能性而非美观性。'},
+  q5:{context:'海姆立克急救',correct:'分析精准！异物阻塞首先影响肺通气，最终导致缺氧。',wrong:'气管阻塞→首先阻碍肺通气（第一层级）→肺泡气体交换（第二层级）→血液运输（第三层级）→组织气体交换（第四层级）。海姆立克法=人为制造用力呼气。'},
+  q6:{context:'支气管炎',correct:'正确！支气管炎导致管腔变窄、气流阻力增大是呼吸乏力的根本原因。',wrong:'支气管炎→黏膜水肿+分泌物增多→管腔变窄→气流阻力增大→通气不畅→呼吸乏力。这是从结构到功能的因果链。'},
+  q7_1:{context:'胸围差与呼吸肌',correct:'正确！',wrong:'胸围差大→肋间肌和膈肌力量强。这两个是主要的呼吸肌。'},
+  q7_2:{context:'模型演示',correct:'正确！',wrong:'下拉橡皮膜=模拟膈肌收缩→胸廓容积增大→肺扩张→吸气。'},
+  q7_3:{context:'肺活量',correct:'正确！',wrong:'胸围差增大→每次呼吸进出气体量增多→肺活量更大。'},
+  q7_4:{context:'半跪限制',correct:'正确！',wrong:'半跪→腹部受压→膈肌下降受限→胸围差减小→限制膈肌。'},
+  q7_5:{context:'增大胸围差',correct:'正确！深呼吸训练是增大胸围差最有效的方法。',wrong:'增大胸围差需要锻炼呼吸肌（肋间肌和膈肌），深呼吸训练是最直接有效的方式。'},
+  q8_1:{context:'木偶戏·吸气',correct:'正确！深吸气时肋间肌和膈肌同时收缩。',wrong:'深吸气=肋间肌+膈肌同时收缩→胸廓容积增大→吸气。'},
+  q8_2:{context:'木偶戏·呼气',correct:'正确！呼气时膈肌舒张→膈顶上拱→胸廓上下径变小。',wrong:'呼气=膈肌舒张→膈顶上拱→胸廓缩小。木偶艺人念白时正是利用这一过程控制气息。'},
+  q8_3:{context:'木偶戏·因果',correct:'正确！这是因果倒置的错误说法。',wrong:'胸廓变化的原因是呼吸肌的收缩和舒张，而"呼吸运动"本身就是胸廓有节律的扩大和缩小。说"胸廓变化由呼吸运动引起"是因果倒置。'},
+  q8_4:{context:'木偶戏·急促',correct:'正确！呼吸急促就是呼吸肌快速舒缩、频率加快的结果。',wrong:'呼吸急促=呼吸肌快速舒缩+频率加快→每次呼吸深度变浅→通气效率降低。'},
+  q8_5:{context:'木偶戏·悠长',correct:'正确！气息悠长需要呼吸肌缓慢舒张来控制呼气。',wrong:'气息悠长=肋间肌和膈肌缓慢舒张→胸廓缓慢缩小→气体均匀缓慢呼出。这就是木偶艺人"气息悠长"的生理基础。'}
+};
+
+// ===== FILL ANSWERS =====
+const FILL_CORRECT = {
+  q7_1:['肋间','膈'],q7_2:['膈','吸气'],q7_3:['大'],q7_4:['减小','膈']
+};
+const FILL_IDS = {
+  q7_1:['f-q7_1a','f-q7_1b'],q7_2:['f-q7_2a','f-q7_2b'],q7_3:['f-q7_3'],q7_4:['f-q7_4a','f-q7_4b']
+};
+
+// ===== INTERACTION FUNCTIONS =====
+function selectOpt(qid, idx, el){
+  const parent = el.parentElement;
+  parent.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));
+  el.classList.add('selected');
+  answers[qid] = idx;
+}
+
+function selectJudge(qid, val, el){
+  const parent = el.parentElement;
+  parent.querySelectorAll('.judge-btn').forEach(b=>{b.classList.remove('selected-true','selected-false');});
+  el.classList.add(val?'selected-true':'selected-false');
+  answers[qid] = val;
+}
+
+function checkAnswer(qid){
+  const qKeys = Object.keys(CORRECT);
+  if(qKeys.includes(qid)){
+    return answers[qid] === CORRECT[qid];
+  }
+  if(FILL_CORRECT[qid]){
+    const ids = FILL_IDS[qid];
+    const correctVals = FILL_CORRECT[qid];
+    for(let i=0;i<ids.length;i++){
+      const inp = document.getElementById(ids[i]);
+      if(!inp) return false;
+      const val = inp.value.trim();
+      if(!val) return false;
+      if(!correctVals[i].includes(val)) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+function enterModules(){
+  document.getElementById('hero').classList.add('hidden');
+  setTimeout(()=>{
+    document.getElementById('navbar').classList.add('show');
+    document.getElementById('slider-wrap').classList.add('show');
+  },400);
+}
+
+function slideTo(idx){
+  currentSlide = idx;
+  document.getElementById('slider-track').style.transform = `translateX(-${idx*100}vw)`;
+  document.querySelectorAll('.nav-btn').forEach((b,i)=>{
+    b.classList.toggle('active', i===idx);
+  });
+}
+
+function submitModule(modIdx){
+  // Check answers for this module
+  const moduleQuestions = [
+    ['q1'],
+    ['q2_1','q2_2','q3'],
+    ['q4'],
+    ['q5','q6','q7_1','q7_2','q7_3','q7_4','q7_5','q8_1','q8_2','q8_3','q8_4','q8_5']
+  ];
+  const qs = moduleQuestions[modIdx];
+  
+  // Mark completed
+  moduleCompleted[modIdx] = true;
+  document.querySelectorAll('.nav-btn')[modIdx].classList.add('completed');
+
+  // Save to localStorage
+  localStorage.setItem('龙舟赛作业_answers', JSON.stringify(answers));
+  localStorage.setItem('龙舟赛作业_completed', JSON.stringify(moduleCompleted));
+
+  // Auto slide to next (for modules 0-2)
+  if(modIdx < 3){
+    setTimeout(()=>slideTo(modIdx+1), 800);
+  } else {
+    // Module 3 completed: Show analysis in module 5
+    setTimeout(()=>{
+      slideTo(4);
+      setTimeout(()=>showCompleteAnalysis(), 500);
+    }, 800);
+  }
+}
+
+function showCompleteAnalysis(){
+  const allModuleQuestions = [
+    ['q1'],
+    ['q2_1','q2_2','q3'],
+    ['q4'],
+    ['q5','q6','q7_1','q7_2','q7_3','q7_4','q7_5','q8_1','q8_2','q8_3','q8_4','q8_5']
+  ];
+  const moduleNames = ['模块一·赛前指导','模块二·赛中监测','模块三·赛后分析','模块四·应急与拓展'];
+  
+  let html = '';
+  let hasWrong = false;
+  let wrongDims = new Set();
+
+  // Analyze each module
+  allModuleQuestions.forEach((qs, modIdx)=>{
+    html += `<div style="margin:20px 0 12px;font-size:1rem;font-weight:700;color:#6ea8cf;">📋 ${moduleNames[modIdx]}</div>`;
+    
+    qs.forEach(qid=>{
+      const isCorrect = checkAnswer(qid);
+      if(!isCorrect) { hasWrong = true; wrongDims.add(KNOWLEDGE_MAP[qid]); }
+      const cls = isCorrect ? 'correct' : 'wrong';
+      const icon = isCorrect ? '✅' : '❌';
+      const expData = QUESTION_EXPLANATIONS[qid];
+      let detail = '';
+      if(isCorrect){
+        detail = expData.correct;
+      } else {
+        detail = expData.wrong;
+        if(ANSWER_EXP[qid]) detail += '<br><br>📖 ' + ANSWER_EXP[qid];
+      }
+      html += `<div class="analysis-item ${cls}">
+        <div class="analysis-result ${cls}">${icon} ${expData.context}</div>
+        <div class="analysis-detail">${detail}</div>
+      </div>`;
+    });
+  });
+
+  // Teacher analysis for wrong dimensions
+  if(hasWrong){
+    html += '<div class="analysis-teacher">';
+    wrongDims.forEach(dim=>{
+      html += '<p style="margin-bottom:12px;"><strong>🔍 ' + dim + '：</strong>' + TEACHER_ANALYSIS[dim] + '</p>';
+    });
+    html += '</div>';
+  }
+
+  const panel = document.getElementById('analysis-panel');
+  panel.innerHTML = html;
+  panel.style.display = 'block';
+  panel.classList.add('show');
+  
+  // Mark module 5 as completed
+  moduleCompleted[4] = true;
+  document.querySelectorAll('.nav-btn')[4].classList.add('completed');
+
+  // Show radar chart
+  const radarSection = document.getElementById('radar-section');
+  radarSection.style.display = 'block';
+  showRadar();
+
+  // Show goto training button
+  const gotoBtn = document.getElementById('goto-training-btn');
+  gotoBtn.style.display = 'block';
+
+  // Prepare reinforcement questions for module 6
+  prepareReinforcementQuestions(wrongDims, hasWrong);
+
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function prepareReinforcementQuestions(wrongDims, hasWrong){
+  const reinfPanel = document.getElementById('reinf-panel');
+  const noWeaknessTip = document.getElementById('no-weakness-tip');
+  
+  if(!hasWrong){
+    reinfPanel.style.display = 'none';
+    noWeaknessTip.style.display = 'block';
+    return;
+  }
+  
+  noWeaknessTip.style.display = 'none';
+  reinfPanel.style.display = 'block';
+  
+  let html = '';
+  wrongDims.forEach(dim=>{
+    const pool = QBANK[dim];
+    if(!pool) return;
+    const shuffled = [...pool].sort(()=>Math.random()-0.5);
+    const picked = shuffled.slice(0,2);
+    picked.forEach((item,qi)=>{
+      const rid = `reinf-${dim.replace(/\s/g,'')}-${qi}`;
+      html += `<div class="reinf-card" id="rc-${rid}">`;
+      html += `<div class="reinf-q">${item.q}</div>`;
+      if(item.type==='mc'){
+        html += `<div class="reinf-options">`;
+        item.opts.forEach((o,oi)=>{
+          html += `<div class="reinf-opt" onclick="checkReinf('${rid}',${oi},${item.ans},this)">${o}</div>`;
+        });
+        html += `</div>`;
+      } else {
+        html += `<div style="font-size:0.82rem;color:rgba(255,255,255,0.5);">💡 填空题，想好后点击查看答案</div>`;
+      }
+      html += `<div class="reinf-answer" id="ra-${rid}">✅ 正确答案：${item.type==='mc'?['A','B','C','D'][item.ans]:item.ans.join('、')}<br>📖 ${item.exp}</div>`;
+      html += `</div>`;
+    });
+  });
+  html += `<button class="refresh-btn" onclick="refreshReinforcement()" style="margin-top:16px;">🔄 换一批新题</button>`;
+  
+  reinfPanel.innerHTML = html;
+}
+
+function refreshReinforcement(){
+  // Recalculate wrong dimensions and regenerate questions
+  const allModuleQuestions = [
+    ['q1'],
+    ['q2_1','q2_2','q3'],
+    ['q4'],
+    ['q5','q6','q7_1','q7_2','q7_3','q7_4','q7_5','q8_1','q8_2','q8_3','q8_4','q8_5']
+  ];
+  
+  let wrongDims = new Set();
+  allModuleQuestions.forEach(qs=>{
+    qs.forEach(qid=>{
+      if(!checkAnswer(qid)) {
+        wrongDims.add(KNOWLEDGE_MAP[qid]);
+      }
+    });
+  });
+  
+  prepareReinforcementQuestions(wrongDims, wrongDims.size > 0);
+}
+
+function refreshCompleteAnalysis(){
+  showCompleteAnalysis();
+}
+
+function checkReinf(rid, selected, correct, el){
+  const parent = el.parentElement;
+  parent.querySelectorAll('.reinf-opt').forEach((o,i)=>{
+    o.classList.remove('selected','correct-reveal','wrong-reveal');
+    if(i===correct) o.classList.add('correct-reveal');
+    if(i===selected && selected!==correct) o.classList.add('wrong-reveal');
+  });
+  el.classList.add(selected===correct?'correct-reveal':'wrong-reveal');
+  document.getElementById('ra-'+rid).classList.add('show');
+}
+
+function refreshReinf(modIdx){
+  // Re-submit to regenerate questions
+  submitModule(modIdx);
+}
+
+// ===== RADAR CHART =====
+function showRadar(){
+  const section = document.getElementById('radar-section');
+  if(!section) return;
+  section.style.display='block';
+  section.scrollIntoView({behavior:'smooth'});
+
+  // Calculate scores per dimension
+  const scores = DIMS.map(dim=>{
+    const qs = DIM_QUESTIONS[dim];
+    if(!qs||qs.length===0) return 0;
+    let correct=0;
+    qs.forEach(qid=>{ if(checkAnswer(qid)) correct++; });
+    return Math.round((correct/qs.length)*100);
+  });
+
+  const ctx = document.getElementById('radarChart');
+  if(!ctx) return;
+  new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:DIMS,
+      datasets:[{
+        label:'掌握度 %',
+        data:scores,
+        backgroundColor:'rgba(212,168,83,0.15)',
+        borderColor:'rgba(212,168,83,0.8)',
+        borderWidth:2,
+        pointBackgroundColor:'#d4a853',
+        pointBorderColor:'#f0d078',
+        pointRadius:5,
+        pointHoverRadius:7
+      }]
+    },
+    options:{
+      responsive:true,
+      scales:{
+        r:{
+          beginAtZero:true,
+          max:100,
+          ticks:{stepSize:20,color:'rgba(255,255,255,0.4)',backdropColor:'transparent',font:{size:10}},
+          grid:{color:'rgba(255,255,255,0.08)'},
+          angleLines:{color:'rgba(255,255,255,0.08)'},
+          pointLabels:{color:'rgba(255,255,255,0.75)',font:{size:11,weight:'600'}}
+        }
+      },
+      plugins:{
+        legend:{labels:{color:'rgba(255,255,255,0.6)',font:{size:12}}}
+      }
+    }
+  });
+}
+
+// ===== CHATBOT =====
+const CHAT_REPLIES = {
+  '吸气':`🫁 <b>吸气过程详解</b><br><br>
+吸气是一个<strong>主动过程</strong>，需要呼吸肌收缩提供动力：<br>
+① <b>肋间外肌收缩</b> → 肋骨向上向外运动 → 胸廓前后径和左右径增大<br>
+② <b>膈肌收缩</b> → 膈顶下降 → 胸廓上下径增大<br>
+③ 胸廓容积增大 → 肺被动扩张 → 肺内气压低于外界大气压<br>
+④ 外界气体经鼻→咽→喉→气管→支气管→肺泡<br><br>
+💡 <b>记忆口诀</b>：肌缩胸扩肺扩张，气压降低气入肺！<br>
+📝 建议用手按压腹部模拟：手向下推=膈肌收缩=吸气`,
+
+  '膈肌':`🔬 <b>膈肌运动要点</b><br><br>
+膈肌是最主要的呼吸肌，位于胸腔和腹腔之间：<br>
+• <b>吸气</b>：膈肌<b>收缩</b> → 膈顶<b>下降</b> → 胸廓上下径增大<br>
+• <b>呼气</b>：膈肌<b>舒张</b> → 膈顶<b>上升</b>（上拱） → 胸廓上下径减小<br><br>
+⚠️ <b>常见错误</b>：很多同学把膈肌的收缩/舒张和膈顶的上升/下降搞反！记住：<br>
+→ 收缩=用力=往下压=吸气<br>
+→ 舒张=放松=往上弹=呼气<br><br>
+🖐️ 试试看：把手放在腹部，深吸气时感受腹部鼓起（膈顶下降压迫腹腔）`,
+
+  '呼气':`💨 <b>呼气过程详解</b><br><br>
+平静呼气是一个<strong>被动过程</strong>（不需要肌肉主动收缩）：<br>
+① <b>肋间外肌舒张</b> → 肋骨下降 → 胸廓前后径和左右径减小<br>
+② <b>膈肌舒张</b> → 膈顶上升（恢复拱形） → 胸廓上下径减小<br>
+③ 胸廓容积减小 → 肺弹性回缩 → 肺内气压高于外界大气压<br>
+④ 肺内气体经肺泡→支气管→气管→喉→咽→鼻排出<br><br>
+💡 <b>关键理解</b>：肺本身不能主动扩张或缩小！它总是<b>被动地</b>随胸腔容积变化而变化。<br>
+📝 类比理解：就像注射器——推活塞=胸廓缩小=气体排出`,
+
+  '胸廓':`📏 <b>胸廓变化与胸围差</b><br><br>
+胸廓有三个径：前后径、左右径、上下径<br>
+• <b>吸气</b>：三个径都增大 → 胸廓容积增大<br>
+• <b>呼气</b>：三个径都减小 → 胸廓容积减小<br><br>
+<b>胸围差</b> = 最大吸气胸围 - 最大呼气胸围<br>
+反映的是肋间肌和膈肌的协同收缩力量。<br><br>
+🏊 运动员胸围差普遍大于普通人，因为长期训练使呼吸肌更发达！<br>
+📝 建议自测：用软尺绕胸部，分别记录尽力吸气和尽力呼气时的胸围，计算差值。`,
+
+  '胸围':`📏 <b>胸围差</b><br><br>
+胸围差 = 尽力吸气时胸围 - 尽力呼气时胸围<br><br>
+• 反映呼吸肌（肋间肌+膈肌）的协同收缩力量<br>
+• 胸围差越大 → 胸廓容积变化越大 → 肺活量越大<br>
+• 影响因素：性别、年龄、体育锻炼<br><br>
+🏊 游泳、慢跑等有氧运动对增大胸围差最有效！<br>
+⚠️ 半跪姿势下腹部受压→膈肌下降受限→胸围差减小`,
+
+  '模型':`🔧 <b>呼吸运动模型分析</b><br><br>
+<b>基本模型（模型甲）</b>：<br>
+• ①玻璃罩=胸廓 ②塑料管=气管 ③Y型管=支气管 ④气球=肺 ⑤橡皮膜=膈肌<br>
+• 只能模拟膈肌运动<br><br>
+<b>改进模型（模型乙）</b>：<br>
+• 增加铁丝=肋骨、弹力带=肋间外肌<br>
+• 能同时模拟膈肌和肋间肌的协同运动<br><br>
+📝 <b>评价模型的核心标准</b>：<br>
+① 模型模拟了什么结构？<br>
+② 能否展示目标生理过程？<br>
+③ 有无遗漏的关键变量？<br>
+⚠️ 评价标准是功能性，不是美观程度！`,
+
+  '急救':`🚨 <b>海姆立克急救法</b><br><br>
+<b>原理</b>：挤压上腹部 → 膈顶上升 → 胸腔缩小 → 肺内气体急速排出 → 冲出异物<br>
+本质是一个<strong>人为制造的"用力呼气"过程</strong>！<br><br>
+<b>气体交换层级</b>：<br>
+第一层：外界↔肺（肺通气）← 异物阻塞首先影响这里！<br>
+第二层：肺↔血液（肺泡气体交换）<br>
+第三层：血液↔组织细胞（组织气体交换）<br><br>
+⚠️ 对2岁以下婴儿用拍背法（腹部冲击可能损伤内脏）<br>
+📝 溺水急救第一步：清除口鼻异物，保持呼吸道通畅`,
+
+  '海姆立克':`🚨 <b>海姆立克急救法</b><br><br>
+由美国医生海姆立克发明，用于异物阻塞气管的急救。<br><br>
+<b>操作步骤</b>：<br>
+① 站在患者身后，一手握拳放在患者上腹部<br>
+② 另一手抓住拳头，快速向内向上冲击<br>
+③ 重复直到异物排出<br><br>
+<b>生理原理</b>：<br>
+腹部冲击 → 膈肌被向上推 → 胸腔容积骤减 → 肺内气压骤升 → 气体急速排出 → 冲出异物<br><br>
+这本质上是一个<strong>人为制造的用力呼气</strong>过程！`,
+
+  '异物':`🫁 <b>异物阻塞呼吸道分析</b><br><br>
+气管是气体进出肺的通道。异物阻塞后：<br><br>
+<b>影响层级</b>：<br>
+1️⃣ 首先阻碍：肺与外界的气体交换（肺通气）<br>
+2️⃣ 进而影响：肺泡内的气体交换<br>
+3️⃣ 最终导致：组织细胞缺氧<br><br>
+<b>症状</b>：无法说话、无法咳嗽、面色发紫<br>
+"发紫"原因：血液中氧气含量下降，还原血红蛋白增多<br><br>
+<b>急救</b>：海姆立克急救法 = 人为制造用力呼气`,
+
+  '肺活量':`📊 <b>肺活量知识</b><br><br>
+<b>定义</b>：尽力吸气后再尽力呼出的气体总量<br><br>
+<b>影响因素</b>：<br>
+• 呼吸肌力量（肋间肌+膈肌）<br>
+• 胸廓弹性<br>
+• 肺泡数量和弹性<br>
+• 性别、年龄、体型<br><br>
+<b>增大方法</b>：<br>
+🏊 游泳、慢跑等有氧运动最有效<br>
+🫁 坚持深呼吸训练<br><br>
+💡 胸围差大的人肺活量也大，因为呼吸肌力量强→胸廓容积变化大→每次进出气体量多`,
+
+  '呼吸运动':`🔄 <b>呼吸运动原理</b><br><br>
+<b>核心逻辑链</b>：<br>
+呼吸肌收缩/舒张 → 胸廓容积变化 → 肺被动扩张/回缩 → 肺内气压变化 → 气体进出<br><br>
+<b>吸气</b>：肌缩→胸扩→肺张→压降→气入<br>
+<b>呼气</b>：肌舒→胸缩→肺缩→压升→气出<br><br>
+⚠️ <b>关键理解</b>：<br>
+• 肺本身不能主动运动，总是被动的<br>
+• 动力来源：呼吸肌的收缩和舒张<br>
+• 直接原因：肺内气压与外界大气压的差值`,
+
+  '呼吸道':`🫁 <b>呼吸道的组成与功能</b><br><br>
+<b>组成顺序</b>：鼻 → 咽 → 喉 → 气管 → 支气管<br><br>
+<b>主要功能</b>：<br>
+① <b>气体通道</b>：保证气体进出肺的通路畅通<br>
+② <b>温暖空气</b>：鼻腔黏膜毛细血管预热冷空气<br>
+③ <b>湿润空气</b>：黏膜分泌黏液湿润干燥空气<br>
+④ <b>清洁空气</b>：鼻毛过滤、黏液粘附、纤毛摆动<br><br>
+📌 <b>结构特点</b>：呼吸道都有骨或软骨做支架，保证气流通畅！<br>
+⚠️ 咽是消化道和呼吸道的共同通道`,
+
+  '鼻腔':`👃 <b>鼻腔的结构与功能</b><br><br>
+<b>结构</b>：<br>
+• 鼻毛：过滤空气中较大颗粒<br>
+• 鼻黏膜：分泌黏液、温暖湿润空气<br>
+• 丰富的毛细血管：预热冷空气<br><br>
+<b>功能</b>：<br>
+① 过滤灰尘和细菌<br>
+② 温暖寒冷空气<br>
+③ 湿润干燥空气<br><br>
+💡 这就是为什么用鼻呼吸比用口呼吸更健康！鼻腔是空气的"加工厂"。`,
+
+  '咽':`🔤 <b>咽——消化与呼吸的共同通道</b><br><br>
+<b>位置</b>：口腔后方，连接鼻腔、口腔和喉<br><br>
+<b>功能</b>：<br>
+• 是食物和气体的<b>共同通道</b><br>
+• 吞咽时，会厌软骨盖住喉口，防止食物误入气管<br><br>
+⚠️ 吃饭时大声说笑，会厌软骨来不及盖住喉口，食物可能误入气管引起剧烈咳嗽！`,
+
+  '喉':`🎤 <b>喉——发声器官</b><br><br>
+<b>位置</b>：咽的下方，气管的上方<br><br>
+<b>功能</b>：<br>
+① <b>发声器官</b>：喉内有声带，气流通过时振动发声<br>
+② <b>气体通道</b>：空气经咽→喉→气管<br><br>
+<b>重要结构</b>：<br>
+• 会厌软骨：位于喉口，吞咽时盖住喉口，防止食物进入气管`,
+
+  '气管':`🌬️ <b>气管与支气管</b><br><br>
+<b>结构</b>：<br>
+• 气管由C形软骨环支撑，保证气流通畅<br>
+• 内壁覆盖黏膜和纤毛<br><br>
+<b>功能</b>：<br>
+① <b>气体通道</b>：连接喉和支气管<br>
+② <b>清洁空气</b>：黏膜分泌黏液粘住灰尘和细菌<br>
+③ <b>形成痰</b>：纤毛向咽喉方向摆动，将黏液送到咽部形成痰<br><br>
+⚠️ 痰中含有病菌，不要随地吐痰！`,
+
+  '支气管':`🌿 <b>支气管</b><br><br>
+<b>结构</b>：<br>
+• 气管分成左右两支支气管，分别进入左右肺<br>
+• 支气管在肺内继续分支，形成支气管树<br><br>
+<b>功能</b>：<br>
+① 将气体输送到肺的各个部分<br>
+② 黏膜分泌黏液，纤毛摆动清洁空气<br>
+③ 与气管共同参与痰的形成<br><br>
+💡 支气管炎时，黏膜水肿、分泌物增多→管腔变窄→气流阻力增大→呼吸乏力`,
+
+  '肺泡':`🫧 <b>肺泡——气体交换的场所</b><br><br>
+<b>结构特点</b>（适于气体交换）：<br>
+① 数量多：约3-5亿个肺泡<br>
+② 表面积大：总面积约100平方米<br>
+③ 壁极薄：仅由一层上皮细胞构成<br>
+④ 外包毛细血管：同样只有一层上皮细胞<br><br>
+<b>气体交换过程</b>：<br>
+• 肺泡内氧气 → 穿过肺泡壁和毛细血管壁 → 进入血液<br>
+• 血液中二氧化碳 → 穿过毛细血管壁和肺泡壁 → 进入肺泡<br><br>
+💡 气体交换原理：气体扩散（从高浓度到低浓度）`,
+
+  '气体交换':`🔄 <b>气体交换全过程</b><br><br>
+<b>第一步：肺通气</b>（外界↔肺）<br>
+• 通过呼吸运动实现<br>
+• 吸气：外界气体进入肺<br>
+• 呼气：肺内气体排出体外<br><br>
+<b>第二步：肺泡气体交换</b>（肺↔血液）<br>
+• 氧气从肺泡→血液<br>
+• 二氧化碳从血液→肺泡<br>
+• 原理：气体扩散<br><br>
+<b>第三步：组织气体交换</b>（血液↔组织细胞）<br>
+• 氧气从血液→组织细胞<br>
+• 二氧化碳从组织细胞→血液<br>
+• 原理：气体扩散<br><br>
+⚠️ 异物阻塞气管，首先影响的是第一步——肺通气！`,
+
+  '肋间肌':`💪 <b>肋间肌</b><br><br>
+<b>分类</b>：<br>
+• <b>肋间外肌</b>：收缩时肋骨向上向外运动→胸廓前后径和左右径增大→协助吸气<br>
+• <b>肋间内肌</b>：收缩时肋骨下降→协助用力呼气<br><br>
+<b>与膈肌的关系</b>：<br>
+• 两者共同构成呼吸肌<br>
+• 吸气时：肋间外肌+膈肌同时收缩<br>
+• 平静呼气时：两者同时舒张<br><br>
+💡 胸围差的大小反映肋间肌和膈肌的协同收缩力量！`,
+
+  '呼吸':`🫁 <b>呼吸系统核心知识</b><br><br>
+<b>呼吸系统组成</b>：<br>
+• 呼吸道：鼻→咽→喉→气管→支气管<br>
+• 肺：气体交换的场所<br><br>
+<b>呼吸运动</b>：<br>
+• 吸气：呼吸肌收缩→胸廓扩大→肺扩张→气体入肺<br>
+• 呼气：呼吸肌舒张→胸廓缩小→肺回缩→气体排出<br><br>
+<b>气体交换</b>：<br>
+• 肺泡↔血液：氧气入血，二氧化碳入肺泡<br>
+• 血液↔组织细胞：氧气入细胞，二氧化碳入血<br><br>
+💡 有任何具体问题可以继续问我！`,
+
+  '龙舟':`🐉 <b>龙舟赛与呼吸</b><br><br>
+龙舟赛是高强度有氧运动，涉及丰富的呼吸知识：<br><br>
+<b>运动时的呼吸变化</b>：<br>
+• 呼吸加深加快：满足肌肉对氧气的需求<br>
+• 胸围差增大：肋间肌和膈肌收缩力量增强<br><br>
+<b>半跪姿势的影响</b>：<br>
+• 腹部受压→膈肌下降受限→胸廓上下径变化减小<br>
+• 吸气费力，长时间后需站立做深长腹式呼吸恢复<br><br>
+<b>赛前调整</b>：<br>
+• 478呼吸法：吸气4秒→屏息7秒→呼气8秒<br>
+• 激活副交感神经，帮助放松`,
+
+  '运动':`🏃 <b>运动与呼吸</b><br><br>
+<b>运动时呼吸的变化</b>：<br>
+• 呼吸加深加快：满足肌肉增加的氧气需求<br>
+• 呼吸肌收缩力量增强：胸廓容积变化更大<br>
+• 肺活量利用率提高<br><br>
+<b>长期运动训练的效果</b>：<br>
+• 呼吸肌（肋间肌+膈肌）更发达<br>
+• 胸围差增大<br>
+• 肺活量增大<br>
+• 安静时呼吸频率降低（效率更高）<br><br>
+💡 游泳、慢跑等有氧运动对增大胸围差最有效！`,
+
+  '打嗝':`😮 <b>打嗝的生理机制</b><br><br>
+<b>原因</b>：膈肌不自主地痉挛收缩<br><br>
+<b>过程</b>：<br>
+• 膈肌突然痉挛性收缩<br>
+• 胸廓容积突然增大<br>
+• 肺急速扩张<br>
+• 外界气体快速冲入<br>
+• 通过声带时发出"嗝"声<br><br>
+💡 打嗝本质上是一次快速的"吸气"动作！`,
+
+  '打喷嚏':`🤧 <b>打喷嚏的生理机制</b><br><br>
+打喷嚏是一次强烈的呼气过程：<br><br>
+<b>过程</b>：<br>
+① 先深吸气<br>
+② 膈肌和肋间肌急剧舒张<br>
+③ 胸廓急剧缩小<br>
+④ 肺急剧回缩<br>
+⑤ 气体以极快速度从鼻腔和口腔喷出<br><br>
+💡 这是机体排出呼吸道异物或刺激物的保护性反射！`,
+
+  '哮喘':`🫁 <b>哮喘与呼吸</b><br><br>
+<b>哮喘的本质</b>：<br>
+• 支气管慢性炎症<br>
+• 气道高反应性<br>
+• 可逆性气流受限<br><br>
+<b>发作时的变化</b>：<br>
+• 支气管平滑肌收缩<br>
+• 黏膜水肿、分泌物增多<br>
+• 管腔变窄→气流阻力增大<br>
+• 呼气困难（尤其是呼气）<br><br>
+⚠️ 与支气管炎类似，但哮喘是过敏反应引起的`,
+
+  '氧气':`🌬️ <b>氧气在体内的旅程</b><br><br>
+<b>路径</b>：<br>
+① 鼻腔→咽→喉→气管→支气管→肺泡<br>
+② 肺泡→穿过肺泡壁和毛细血管壁→进入血液<br>
+③ 与红细胞中的血红蛋白结合<br>
+④ 随血液循环到达组织细胞<br>
+⑤ 穿过毛细血管壁→进入组织细胞<br>
+⑥ 在线粒体中参与有机物分解，释放能量<br><br>
+💡 缺氧时血液中还原血红蛋白增多，皮肤呈现青紫色！`,
+
+  '二氧化碳':`💨 <b>二氧化碳的排出</b><br><br>
+<b>产生</b>：组织细胞进行呼吸作用产生二氧化碳<br><br>
+<b>排出路径</b>：<br>
+① 组织细胞→穿过毛细血管壁→进入血液<br>
+② 大部分以碳酸氢盐形式运输<br>
+③ 到达肺部后重新转化为二氧化碳<br>
+④ 穿过毛细血管壁和肺泡壁→进入肺泡<br>
+⑤ 肺泡→支气管→气管→喉→咽→鼻→排出体外<br><br>
+💡 呼气时排出的就是二氧化碳为主的废气！`,
+
+  '痰':`🤧 <b>痰的形成与排出</b><br><br>
+<b>形成部位</b>：气管和支气管<br><br>
+<b>形成过程</b>：<br>
+① 气管和支气管内壁的黏膜分泌黏液<br>
+② 黏液粘住吸入的灰尘、细菌等异物<br>
+③ 纤毛向咽喉方向有节律地摆动<br>
+④ 将黏液推到咽部<br>
+⑤ 形成痰<br><br>
+⚠️ 痰中含有病菌，不要随地吐痰！应吐在纸巾里扔进垃圾桶。`,
+
+  '肺':`🫁 <b>肺的结构与功能</b><br><br>
+<b>位置</b>：胸腔内，左右各一<br><br>
+<b>结构</b>：<br>
+• 支气管进入肺后反复分支<br>
+• 末端形成肺泡<br>
+• 肺泡外包绕丰富的毛细血管<br><br>
+<b>功能</b>：<br>
+• <b>气体交换的场所</b><br>
+• 肺泡是气体交换的基本单位<br><br>
+<b>特点</b>：<br>
+• 肺本身不能主动扩张或缩小<br>
+• 总是被动地随胸腔容积变化而变化<br>
+• 有弹性，能弹性回缩`,
+
+  '呼吸肌':`💪 <b>呼吸肌</b><br><br>
+<b>组成</b>：<br>
+• <b>膈肌</b>：最主要的呼吸肌，位于胸腔和腹腔之间<br>
+• <b>肋间肌</b>：包括肋间外肌和肋间内肌<br><br>
+<b>作用</b>：<br>
+• 吸气时：膈肌+肋间外肌同时收缩<br>
+• 平静呼气时：两者同时舒张（被动过程）<br>
+• 用力呼气时：肋间内肌收缩（主动过程）<br><br>
+💡 胸围差的大小直接反映呼吸肌的收缩力量！深呼吸训练可以增强呼吸肌力量。`,
+
+  '错题':'',
+  '分析':'',
+  '薄弱':'',
+
+  '478':`🧘 <b>478呼吸法分析</b><br><br>
+<b>步骤一</b>（吸气4秒）：鼻吸气 → 肋间肌和膈肌收缩 → 胸腔扩大 → 肺扩张 → 气入<br><br>
+<b>步骤二</b>（屏息7秒）：呼吸肌<b>保持收缩</b>状态 → 膈顶<b>维持下降</b> → 胸腔保持扩大 → 声门关闭 → 气体暂时不进出<br><br>
+<b>步骤三</b>（呼气8秒）：口呼气 → 肋间肌和膈肌<b>缓慢舒张</b> → 胸腔逐渐缩小 → 肺回缩 → 气体经肺→支气管→气管→喉→咽→鼻排出<br><br>
+💡 这种方法能激活副交感神经，帮助放松，赛前很实用！`
+};
+
+function getChatReply(msg){
+  const keywords = ['吸气','膈肌','呼气','胸廓','胸围','模型','急救','海姆立克','异物','肺活量','呼吸运动','478','呼吸道','鼻腔','咽','喉','气管','支气管','肺泡','气体交换','肋间肌','呼吸','龙舟','运动','打嗝','打喷嚏','哮喘','氧气','二氧化碳','痰','肺','呼吸肌'];
+  for(const kw of keywords){
+    if(msg.includes(kw)) return CHAT_REPLIES[kw];
+  }
+  if(msg.includes('错题')||msg.includes('分析')||msg.includes('薄弱')){
+    const saved = localStorage.getItem('龙舟赛作业_answers');
+    if(!saved) return '🤔 你还没有提交过作业哦！先完成题目，然后我来帮你分析错题和薄弱环节。';
+    let wrongList = [];
+    const ans = JSON.parse(saved);
+    Object.keys(CORRECT).forEach(qid=>{
+      if(ans[qid]!==undefined && ans[qid]!==CORRECT[qid]){
+        wrongList.push(qid);
+      }
+    });
+    if(wrongList.length===0) return '🎉 太棒了！你目前作答的题目全部正确！继续保持！';
+    let reply = '📋 <b>你的错题分析</b><br><br>';
+    wrongList.forEach(qid=>{
+      const dim = KNOWLEDGE_MAP[qid];
+      const exp = QUESTION_EXPLANATIONS[qid];
+      if(exp) reply += `❌ <b>${exp.context}</b>（${dim}）<br>${ANSWER_EXP[qid]||''}<br><br>`;
+    });
+    reply += '💡 建议重点关注薄弱环节，对照课本逐一复习！';
+    return reply;
+  }
+  return `😊 感谢你的提问！这个问题很有趣。<br><br>我目前最擅长回答以下话题：<br>🫁 吸气与呼气过程<br>💪 膈肌、肋间肌运动<br>📏 胸廓变化与胸围差<br>🫧 肺泡与气体交换<br>🌬️ 呼吸道（鼻、咽、喉、气管、支气管）<br>🔧 呼吸模型分析<br>🚨 海姆立克急救法<br>🧘 478呼吸法<br>🐉 龙舟赛与呼吸<br>🏃 运动与呼吸<br>📊 肺活量<br>💨 氧气、二氧化碳、痰<br>📋 错题分析<br><br>试试问我："吸气时膈肌怎么运动？"`;
+}
+
+function toggleChat(){
+  const panel = document.getElementById('chat-panel');
+  panel.classList.toggle('open');
+  if(panel.classList.contains('open') && document.getElementById('chat-messages').children.length===0){
+    addBotMsg('你好！我是你的生物学习助手 🧬<br><br>你可以问我任何关于呼吸系统的问题，也可以让我帮你分析错题哦！<br><br>试试问我：<b>"吸气时膈肌怎么运动？"</b>');
+  }
+}
+
+function addBotMsg(html){
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg bot';
+  div.innerHTML = html;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function addUserMsg(text){
+  const container = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'chat-msg user';
+  div.textContent = text;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if(!msg) return;
+  addUserMsg(msg);
+  input.value = '';
+  setTimeout(()=>{
+    addBotMsg(getChatReply(msg));
+  }, 400);
+}
+
+// ===== INIT =====
+function init(){
+  renderModules();
+  // Restore from localStorage
+  const saved = localStorage.getItem('龙舟赛作业_answers');
+  if(saved) answers = JSON.parse(saved);
+  const savedC = localStorage.getItem('龙舟赛作业_completed');
+  if(savedC){
+    moduleCompleted = JSON.parse(savedC);
+    moduleCompleted.forEach((done,i)=>{
+      if(done) document.querySelectorAll('.nav-btn')[i].classList.add('completed');
+    });
+  }
+  // Restore selections
+  Object.keys(answers).forEach(qid=>{
+    const val = answers[qid];
+    if(typeof val === 'number'){
+      const opts = document.getElementById('opts-'+qid);
+      if(opts){
+        const btns = opts.querySelectorAll('.option-btn');
+        if(btns[val]) btns[val].classList.add('selected');
+      }
+    } else if(typeof val === 'boolean'){
+      // Judgment
+      const judgeItems = document.querySelectorAll('.judge-item');
+      const judgeQids = ['q8_1','q8_2','q8_3','q8_4','q8_5'];
+      const idx = judgeQids.indexOf(qid);
+      if(idx>=0 && judgeItems[idx]){
+        const btns = judgeItems[idx].querySelectorAll('.judge-btn');
+        if(val) btns[0].classList.add('selected-true');
+        else btns[1].classList.add('selected-false');
+      }
+    }
+  });
+}
+init();
+</script>
+</body>
+</html>
